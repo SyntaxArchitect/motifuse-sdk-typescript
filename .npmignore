@@ -1,0 +1,15 @@
+src/
+tests/
+scripts/
+examples/
+openapi/
+.github/
+tsconfig.json
+tsup.config.ts
+eslint.config.mjs
+.prettierrc.json
+.prettierignore
+.env.example
+CONTRIBUTING.md
+SECURITY.md
+CODE_OF_CONDUCT.md

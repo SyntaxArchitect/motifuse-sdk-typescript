@@ -1,0 +1,78 @@
+{
+  "name": "@motifuse/sdk",
+  "version": "1.0.0-beta.1",
+  "description": "Official TypeScript SDK for the Motifuse API",
+  "license": "MIT",
+  "author": "Motifuse",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md"
+  ],
+  "sideEffects": false,
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SyntaxArchitect/motifuse-sdk-typescript.git"
+  },
+  "homepage": "https://motifuse.com/developers/sdk",
+  "bugs": {
+    "url": "https://github.com/SyntaxArchitect/motifuse-sdk-typescript/issues"
+  },
+  "keywords": [
+    "motifuse",
+    "typescript",
+    "sdk",
+    "api",
+    "openapi",
+    "docforge",
+    "reconova",
+    "spectrace"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "provenance": true,
+    "tag": "beta"
+  },
+  "scripts": {
+    "build": "npm run clean && tsc -p tsconfig.build.json && node scripts/copy-generated.mjs",
+    "clean": "node scripts/clean.mjs",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "lint": "eslint src tests scripts",
+    "typecheck": "tsc --noEmit",
+    "test": "npm run build && node --test tests/*.test.mjs",
+    "examples:check": "npm run build && tsc --noEmit -p tsconfig.examples.json",
+    "consumer:check": "npm run build && node scripts/check-consumer.mjs",
+    "openapi:generate": "openapi-typescript openapi/motifuse.openapi.json -o src/generated/schema.d.ts --alphabetize --default-non-nullable false",
+    "openapi:check": "node scripts/check-generated.mjs",
+    "openapi:upstream": "node scripts/check-upstream.mjs",
+    "package:check": "npm run build && node scripts/check-package.mjs",
+    "check": "npm run format:check && npm run lint && npm run typecheck && npm run openapi:check && npm test && npm run examples:check && npm run package:check && npm run consumer:check"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.4",
+    "@types/node": "^24.10.0",
+    "eslint": "^9.39.4",
+    "globals": "^16.5.0",
+    "openapi-typescript": "^7.10.1",
+    "prettier": "^3.6.2",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.46.3"
+  }
+}

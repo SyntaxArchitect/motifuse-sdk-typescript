@@ -1,0 +1,22 @@
+name: Feature request
+description: Propose an SDK improvement backed by a public Motifuse API capability.
+title: "[Feature]: "
+labels: [enhancement]
+body:
+  - type: textarea
+    id: workflow
+    attributes:
+      label: Developer workflow
+      description: Explain the production integration problem this would solve.
+    validations:
+      required: true
+  - type: input
+    id: operation
+    attributes:
+      label: Related public API operation or documentation
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed SDK experience
+    validations:
+      required: true

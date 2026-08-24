@@ -1,0 +1,5 @@
+dist
+node_modules
+src/generated/schema.d.ts
+openapi/motifuse.openapi.json
+package-lock.json
