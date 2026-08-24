@@ -3,6 +3,13 @@ name: Release
 on:
   push:
     branches: [main]
+  workflow_dispatch:
+    inputs:
+      publish_current:
+        description: Publish the current package version through npm OIDC
+        required: true
+        default: false
+        type: boolean
 
 jobs:
   release:
@@ -20,7 +27,7 @@ jobs:
           manifest-file: .release-please-manifest.json
 
   publish:
-    if: needs.release.outputs.release_created == 'true'
+    if: needs.release.outputs.release_created == 'true' || (github.event_name == 'workflow_dispatch' && inputs.publish_current)
     needs: release
     runs-on: ubuntu-latest
     permissions:

@@ -8,19 +8,19 @@ Official TypeScript SDK for the Motifuse API.
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178c6.svg)](https://www.typescriptlang.org/)
 
-> Release status: `1.0.0-beta.1` is the first release candidate. npm publication requires the
-> `@motifuse` scope owner to bootstrap the package and authorize Trusted Publishing. Until that
-> owner action is complete, install from a locally packed tarball for evaluation.
+> Release status: `1.0.0-beta.2` is published publicly on npm. The official GitHub release
+> workflow is authorized as an npm Trusted Publisher and uses short-lived OIDC credentials for
+> subsequent releases.
 
 ## Installation
 
-The official stable installation command is:
+Install the current public beta:
 
 ```bash
 npm install @motifuse/sdk
 ```
 
-During the prerelease channel, use `npm install @motifuse/sdk@beta` after the first npm release.
+Use `npm install @motifuse/sdk@beta` when you want to follow the prerelease channel explicitly.
 The package targets Node.js 20 or newer and uses native `fetch`. It is ESM-first and has zero
 runtime dependencies.
 
