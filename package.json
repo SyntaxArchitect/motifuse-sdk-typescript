@@ -66,13 +66,13 @@
     "check": "npm run format:check && npm run lint && npm run typecheck && npm run openapi:check && npm test && npm run examples:check && npm run package:check && npm run consumer:check"
   },
   "devDependencies": {
-    "@eslint/js": "^9.39.4",
-    "@types/node": "^24.10.0",
-    "eslint": "^9.39.4",
-    "globals": "^16.5.0",
+    "@eslint/js": "^10.0.1",
+    "@types/node": "^26.2.0",
+    "eslint": "^10.8.1",
+    "globals": "^17.11.0",
     "openapi-typescript": "^7.10.1",
     "prettier": "^3.6.2",
-    "typescript": "^5.9.3",
+    "typescript": "^7.0.2",
     "typescript-eslint": "^8.46.3"
   }
 }
