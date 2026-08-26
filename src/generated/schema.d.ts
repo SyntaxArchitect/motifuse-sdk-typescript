@@ -968,30 +968,53 @@ export interface components {
         Finding: {
             baseline_locator?: Record<string, never> | null;
             baseline_spreadsheet?: Record<string, never> | null;
+            change_family?: string | null;
+            change_sub_type?: string | null;
+            change_type?: string | null;
             change_types: string[];
             comparison_id: string;
             confidence: number;
+            confidence_details?: {
+                [key: string]: unknown;
+            } | null;
             /** Format: date-time */
-            created_at?: string;
+            created_at?: string | null;
+            evidence?: {
+                [key: string]: unknown;
+            } | null;
             explanation?: string;
             id: string;
-            importance: unknown;
+            /** @enum {string} */
+            importance: "INFORMATIONAL" | "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
+            importance_details?: {
+                [key: string]: unknown;
+            } | null;
             new_text?: string;
             note?: string;
             /** @constant */
             object: "finding";
             old_text?: string;
             primary_change_type?: string;
+            project_id?: string | null;
+            reason_code?: string | null;
+            review?: {
+                [key: string]: unknown;
+            } | null;
             /** Format: date-time */
             reviewed_at?: string | null;
             revised_locator?: Record<string, never> | null;
             revised_spreadsheet?: Record<string, never> | null;
-            status: string;
+            semantic_sub_type?: string | null;
+            semantic_type?: string | null;
+            /** @enum {string} */
+            status: "unreviewed" | "under_review" | "needs_clarification" | "confirmed" | "rejected_noise" | "action_required" | "resolved" | "closed";
+            structural_type?: string | null;
+            typed_delta?: {
+                [key: string]: unknown;
+            } | null;
             /** Format: date-time */
-            updated_at?: string;
+            updated_at?: string | null;
             value_changes?: Record<string, never>[];
-        } & {
-            [key: string]: unknown;
         };
         FindingList: {
             data: components["schemas"]["Finding"][];
@@ -999,11 +1022,17 @@ export interface components {
             next_cursor: string | null;
         };
         FindingReviewRequest: {
-            importance?: unknown;
+            /**
+             * @description Override the engine-assigned importance. Null restores the engine value.
+             * @enum {string|null}
+             */
+            importance?: "INFORMATIONAL" | "LOW" | "MEDIUM" | "HIGH" | "CRITICAL" | null;
             note?: string;
             reason?: string;
-            rev?: number;
-            status?: string;
+            /** @description Optimistic-concurrency revision returned in finding.review.rev. */
+            rev: number;
+            /** @enum {string} */
+            status?: "unreviewed" | "under_review" | "needs_clarification" | "confirmed" | "rejected_noise" | "action_required" | "resolved" | "closed";
         };
         Job: {
             cancellation_requested?: boolean;
@@ -1540,6 +1569,22 @@ export interface operations {
         };
         requestBody: {
             content: {
+                /**
+                 * @example {
+                 *       "template_id": "tpl_invoice",
+                 *       "rows": [
+                 *         {
+                 *           "invoice_number": "INV-1042",
+                 *           "customer_name": "Example Industries",
+                 *           "total": 2499.5
+                 *         }
+                 *       ],
+                 *       "output_format": "pdf",
+                 *       "metadata": {
+                 *         "source": "billing-service"
+                 *       }
+                 *     }
+                 */
                 "application/json": components["schemas"]["DocForgeGenerationRequest"];
             };
         };
@@ -1661,6 +1706,11 @@ export interface operations {
         };
         requestBody: {
             content: {
+                /**
+                 * @example {
+                 *       "target": "archive"
+                 *     }
+                 */
                 "application/json": components["schemas"]["DocForgeDownloadRequest"];
             };
         };
@@ -1773,6 +1823,13 @@ export interface operations {
         };
         requestBody: {
             content: {
+                /**
+                 * @example {
+                 *       "filename": "customer-master.xlsx",
+                 *       "size": 62865,
+                 *       "content_type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                 *     }
+                 */
                 "application/json": components["schemas"]["ReconovaFileRequest"];
             };
         };
@@ -2049,6 +2106,19 @@ export interface operations {
         };
         requestBody: {
             content: {
+                /**
+                 * @example {
+                 *       "source_asset_id": "asset_customer_master",
+                 *       "steps": [
+                 *         {
+                 *           "type": "trim_whitespace",
+                 *           "columns": [
+                 *             "customer_name"
+                 *           ]
+                 *         }
+                 *       ]
+                 *     }
+                 */
                 "application/json": components["schemas"]["ReconovaCleanRequest"];
             };
         };
@@ -2163,9 +2233,9 @@ export interface operations {
             query?: {
                 change_type?: string;
                 cursor?: string | null;
-                importance?: string;
+                importance?: "INFORMATIONAL" | "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
                 limit?: number;
-                status?: string;
+                status?: "unreviewed" | "under_review" | "needs_clarification" | "confirmed" | "rejected_noise" | "action_required" | "resolved" | "closed";
             };
             header?: {
                 /** @description Optional caller correlation ID. Motifuse returns a request ID on every response. */
@@ -2362,6 +2432,14 @@ export interface operations {
         };
         requestBody: {
             content: {
+                /**
+                 * @example {
+                 *       "status": "confirmed",
+                 *       "importance": "HIGH",
+                 *       "note": "Validated against change notice CN-042.",
+                 *       "rev": 0
+                 *     }
+                 */
                 "application/json": components["schemas"]["FindingReviewRequest"];
             };
         };
@@ -2509,6 +2587,16 @@ export interface operations {
         };
         requestBody: {
             content: {
+                /**
+                 * @example {
+                 *       "name": "Vendor Contract Review",
+                 *       "reference": "PROC-2026-042",
+                 *       "tags": [
+                 *         "procurement"
+                 *       ],
+                 *       "priority": "high"
+                 *     }
+                 */
                 "application/json": components["schemas"]["SpectraceProjectRequest"];
             };
         };
@@ -2625,6 +2713,16 @@ export interface operations {
         };
         requestBody: {
             content: {
+                /**
+                 * @example {
+                 *       "name": "Vendor Contract Review",
+                 *       "reference": "PROC-2026-042",
+                 *       "tags": [
+                 *         "procurement"
+                 *       ],
+                 *       "priority": "high"
+                 *     }
+                 */
                 "application/json": components["schemas"]["SpectraceProjectRequest"];
             };
         };
@@ -2706,6 +2804,13 @@ export interface operations {
         };
         requestBody: {
             content: {
+                /**
+                 * @example {
+                 *       "baseline_version_id": "stv_baseline",
+                 *       "revised_version_id": "stv_revised",
+                 *       "include_furniture": false
+                 *     }
+                 */
                 "application/json": components["schemas"]["SpectraceComparisonRequest"];
             };
         };
@@ -2796,6 +2901,15 @@ export interface operations {
         };
         requestBody: {
             content: {
+                /**
+                 * @example {
+                 *       "filename": "contract-v2.docx",
+                 *       "content_type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                 *       "size": 38356,
+                 *       "version_label": "v2",
+                 *       "effective_date": "2026-09-01"
+                 *     }
+                 */
                 "application/json": components["schemas"]["SpectraceFileRequest"];
             };
         };
@@ -2899,6 +3013,16 @@ export interface operations {
         };
         requestBody: {
             content: {
+                /**
+                 * @example {
+                 *       "url": "https://example.com/webhooks/motifuse",
+                 *       "events": [
+                 *         "spectrace.comparison.completed",
+                 *         "spectrace.comparison.failed"
+                 *       ],
+                 *       "description": "Production comparison events"
+                 *     }
+                 */
                 "application/json": components["schemas"]["WebhookEndpointRequest"];
             };
         };
@@ -2973,6 +3097,12 @@ export interface operations {
         };
         requestBody: {
             content: {
+                /**
+                 * @example {
+                 *       "status": "active",
+                 *       "rotate_secret": false
+                 *     }
+                 */
                 "application/json": {
                     rotate_secret?: boolean;
                     /** @enum {string} */
@@ -3087,6 +3217,19 @@ export interface operations {
         };
         requestBody: {
             content: {
+                /**
+                 * @example {
+                 *       "id": "evt_example",
+                 *       "type": "spectrace.comparison.completed",
+                 *       "api_version": "2026-08-24",
+                 *       "created": 1787558400,
+                 *       "workspace_id": "ws_example",
+                 *       "data": {
+                 *         "comparison_id": "stc_example"
+                 *       },
+                 *       "metadata": {}
+                 *     }
+                 */
                 "application/json": components["schemas"]["WebhookEvent"];
             };
         };
@@ -3113,6 +3256,19 @@ export interface operations {
         };
         requestBody: {
             content: {
+                /**
+                 * @example {
+                 *       "id": "evt_example",
+                 *       "type": "spectrace.comparison.completed",
+                 *       "api_version": "2026-08-24",
+                 *       "created": 1787558400,
+                 *       "workspace_id": "ws_example",
+                 *       "data": {
+                 *         "comparison_id": "stc_example"
+                 *       },
+                 *       "metadata": {}
+                 *     }
+                 */
                 "application/json": components["schemas"]["WebhookEvent"];
             };
         };
@@ -3139,6 +3295,19 @@ export interface operations {
         };
         requestBody: {
             content: {
+                /**
+                 * @example {
+                 *       "id": "evt_example",
+                 *       "type": "spectrace.comparison.completed",
+                 *       "api_version": "2026-08-24",
+                 *       "created": 1787558400,
+                 *       "workspace_id": "ws_example",
+                 *       "data": {
+                 *         "comparison_id": "stc_example"
+                 *       },
+                 *       "metadata": {}
+                 *     }
+                 */
                 "application/json": components["schemas"]["WebhookEvent"];
             };
         };
@@ -3165,6 +3334,19 @@ export interface operations {
         };
         requestBody: {
             content: {
+                /**
+                 * @example {
+                 *       "id": "evt_example",
+                 *       "type": "spectrace.comparison.completed",
+                 *       "api_version": "2026-08-24",
+                 *       "created": 1787558400,
+                 *       "workspace_id": "ws_example",
+                 *       "data": {
+                 *         "comparison_id": "stc_example"
+                 *       },
+                 *       "metadata": {}
+                 *     }
+                 */
                 "application/json": components["schemas"]["WebhookEvent"];
             };
         };
@@ -3191,6 +3373,19 @@ export interface operations {
         };
         requestBody: {
             content: {
+                /**
+                 * @example {
+                 *       "id": "evt_example",
+                 *       "type": "spectrace.comparison.completed",
+                 *       "api_version": "2026-08-24",
+                 *       "created": 1787558400,
+                 *       "workspace_id": "ws_example",
+                 *       "data": {
+                 *         "comparison_id": "stc_example"
+                 *       },
+                 *       "metadata": {}
+                 *     }
+                 */
                 "application/json": components["schemas"]["WebhookEvent"];
             };
         };
@@ -3217,6 +3412,19 @@ export interface operations {
         };
         requestBody: {
             content: {
+                /**
+                 * @example {
+                 *       "id": "evt_example",
+                 *       "type": "spectrace.comparison.completed",
+                 *       "api_version": "2026-08-24",
+                 *       "created": 1787558400,
+                 *       "workspace_id": "ws_example",
+                 *       "data": {
+                 *         "comparison_id": "stc_example"
+                 *       },
+                 *       "metadata": {}
+                 *     }
+                 */
                 "application/json": components["schemas"]["WebhookEvent"];
             };
         };
@@ -3243,6 +3451,19 @@ export interface operations {
         };
         requestBody: {
             content: {
+                /**
+                 * @example {
+                 *       "id": "evt_example",
+                 *       "type": "spectrace.comparison.completed",
+                 *       "api_version": "2026-08-24",
+                 *       "created": 1787558400,
+                 *       "workspace_id": "ws_example",
+                 *       "data": {
+                 *         "comparison_id": "stc_example"
+                 *       },
+                 *       "metadata": {}
+                 *     }
+                 */
                 "application/json": components["schemas"]["WebhookEvent"];
             };
         };
@@ -3269,6 +3490,19 @@ export interface operations {
         };
         requestBody: {
             content: {
+                /**
+                 * @example {
+                 *       "id": "evt_example",
+                 *       "type": "spectrace.comparison.completed",
+                 *       "api_version": "2026-08-24",
+                 *       "created": 1787558400,
+                 *       "workspace_id": "ws_example",
+                 *       "data": {
+                 *         "comparison_id": "stc_example"
+                 *       },
+                 *       "metadata": {}
+                 *     }
+                 */
                 "application/json": components["schemas"]["WebhookEvent"];
             };
         };
@@ -3295,6 +3529,19 @@ export interface operations {
         };
         requestBody: {
             content: {
+                /**
+                 * @example {
+                 *       "id": "evt_example",
+                 *       "type": "spectrace.comparison.completed",
+                 *       "api_version": "2026-08-24",
+                 *       "created": 1787558400,
+                 *       "workspace_id": "ws_example",
+                 *       "data": {
+                 *         "comparison_id": "stc_example"
+                 *       },
+                 *       "metadata": {}
+                 *     }
+                 */
                 "application/json": components["schemas"]["WebhookEvent"];
             };
         };
@@ -3321,6 +3568,19 @@ export interface operations {
         };
         requestBody: {
             content: {
+                /**
+                 * @example {
+                 *       "id": "evt_example",
+                 *       "type": "spectrace.comparison.completed",
+                 *       "api_version": "2026-08-24",
+                 *       "created": 1787558400,
+                 *       "workspace_id": "ws_example",
+                 *       "data": {
+                 *         "comparison_id": "stc_example"
+                 *       },
+                 *       "metadata": {}
+                 *     }
+                 */
                 "application/json": components["schemas"]["WebhookEvent"];
             };
         };
@@ -3347,6 +3607,19 @@ export interface operations {
         };
         requestBody: {
             content: {
+                /**
+                 * @example {
+                 *       "id": "evt_example",
+                 *       "type": "spectrace.comparison.completed",
+                 *       "api_version": "2026-08-24",
+                 *       "created": 1787558400,
+                 *       "workspace_id": "ws_example",
+                 *       "data": {
+                 *         "comparison_id": "stc_example"
+                 *       },
+                 *       "metadata": {}
+                 *     }
+                 */
                 "application/json": components["schemas"]["WebhookEvent"];
             };
         };
@@ -3373,6 +3646,19 @@ export interface operations {
         };
         requestBody: {
             content: {
+                /**
+                 * @example {
+                 *       "id": "evt_example",
+                 *       "type": "spectrace.comparison.completed",
+                 *       "api_version": "2026-08-24",
+                 *       "created": 1787558400,
+                 *       "workspace_id": "ws_example",
+                 *       "data": {
+                 *         "comparison_id": "stc_example"
+                 *       },
+                 *       "metadata": {}
+                 *     }
+                 */
                 "application/json": components["schemas"]["WebhookEvent"];
             };
         };
@@ -3399,6 +3685,19 @@ export interface operations {
         };
         requestBody: {
             content: {
+                /**
+                 * @example {
+                 *       "id": "evt_example",
+                 *       "type": "spectrace.comparison.completed",
+                 *       "api_version": "2026-08-24",
+                 *       "created": 1787558400,
+                 *       "workspace_id": "ws_example",
+                 *       "data": {
+                 *         "comparison_id": "stc_example"
+                 *       },
+                 *       "metadata": {}
+                 *     }
+                 */
                 "application/json": components["schemas"]["WebhookEvent"];
             };
         };
@@ -3425,6 +3724,19 @@ export interface operations {
         };
         requestBody: {
             content: {
+                /**
+                 * @example {
+                 *       "id": "evt_example",
+                 *       "type": "spectrace.comparison.completed",
+                 *       "api_version": "2026-08-24",
+                 *       "created": 1787558400,
+                 *       "workspace_id": "ws_example",
+                 *       "data": {
+                 *         "comparison_id": "stc_example"
+                 *       },
+                 *       "metadata": {}
+                 *     }
+                 */
                 "application/json": components["schemas"]["WebhookEvent"];
             };
         };
@@ -3451,6 +3763,19 @@ export interface operations {
         };
         requestBody: {
             content: {
+                /**
+                 * @example {
+                 *       "id": "evt_example",
+                 *       "type": "spectrace.comparison.completed",
+                 *       "api_version": "2026-08-24",
+                 *       "created": 1787558400,
+                 *       "workspace_id": "ws_example",
+                 *       "data": {
+                 *         "comparison_id": "stc_example"
+                 *       },
+                 *       "metadata": {}
+                 *     }
+                 */
                 "application/json": components["schemas"]["WebhookEvent"];
             };
         };
@@ -3477,6 +3802,19 @@ export interface operations {
         };
         requestBody: {
             content: {
+                /**
+                 * @example {
+                 *       "id": "evt_example",
+                 *       "type": "spectrace.comparison.completed",
+                 *       "api_version": "2026-08-24",
+                 *       "created": 1787558400,
+                 *       "workspace_id": "ws_example",
+                 *       "data": {
+                 *         "comparison_id": "stc_example"
+                 *       },
+                 *       "metadata": {}
+                 *     }
+                 */
                 "application/json": components["schemas"]["WebhookEvent"];
             };
         };
@@ -3503,6 +3841,19 @@ export interface operations {
         };
         requestBody: {
             content: {
+                /**
+                 * @example {
+                 *       "id": "evt_example",
+                 *       "type": "spectrace.comparison.completed",
+                 *       "api_version": "2026-08-24",
+                 *       "created": 1787558400,
+                 *       "workspace_id": "ws_example",
+                 *       "data": {
+                 *         "comparison_id": "stc_example"
+                 *       },
+                 *       "metadata": {}
+                 *     }
+                 */
                 "application/json": components["schemas"]["WebhookEvent"];
             };
         };
@@ -3529,6 +3880,19 @@ export interface operations {
         };
         requestBody: {
             content: {
+                /**
+                 * @example {
+                 *       "id": "evt_example",
+                 *       "type": "spectrace.comparison.completed",
+                 *       "api_version": "2026-08-24",
+                 *       "created": 1787558400,
+                 *       "workspace_id": "ws_example",
+                 *       "data": {
+                 *         "comparison_id": "stc_example"
+                 *       },
+                 *       "metadata": {}
+                 *     }
+                 */
                 "application/json": components["schemas"]["WebhookEvent"];
             };
         };
