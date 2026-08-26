@@ -50,7 +50,10 @@ export interface FindingListInput extends PaginationInput {
 }
 
 export interface FileUploadOptions {
-  body: BodyInit;
+  /** Bytes accepted by Node's native fetch. The explicit typed-array branch
+   * keeps consumers on newer TypeScript DOM declarations from losing the
+   * Node Buffer/Uint8Array upload path to ArrayBufferLike variance. */
+  body: BodyInit | Uint8Array<ArrayBufferLike>;
   signal?: AbortSignal | undefined;
   idempotencyKey?: string | undefined;
 }

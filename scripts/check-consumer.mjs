@@ -44,7 +44,7 @@ try {
   );
   await writeFile(
     join(consumerDirectory, "index.ts"),
-    'import { Motifuse, type SpectraceComparison } from "@motifuse/sdk";\nconst client = new Motifuse({ apiKey: "mf_test_type_fixture" });\nconst comparison: SpectraceComparison | undefined = undefined;\nvoid client; void comparison;\n',
+    'import { Motifuse, type SpectraceComparison } from "@motifuse/sdk";\nconst client = new Motifuse({ apiKey: "mf_test_type_fixture" });\nconst comparison: SpectraceComparison | undefined = undefined;\nconst bytes: Uint8Array<ArrayBufferLike> = new Uint8Array(8);\nvoid client.reconova.files.upload({ filename: "qa.csv", size: bytes.byteLength, content_type: "text/csv" }, { body: bytes });\nvoid client; void comparison;\n',
   );
   await writeFile(
     join(consumerDirectory, "tsconfig.json"),

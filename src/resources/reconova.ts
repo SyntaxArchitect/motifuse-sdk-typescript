@@ -68,7 +68,11 @@ export class ReconovaFilesResource {
     }
     await this.client.upload(
       file.upload.url,
-      { method: file.upload.method, headers: file.upload.headers, body: uploadOptions.body },
+      {
+        method: file.upload.method,
+        headers: file.upload.headers,
+        body: uploadOptions.body as BodyInit,
+      },
       uploadOptions.signal,
     );
     return this.complete(file.id, {

@@ -3,6 +3,15 @@
 All notable SDK changes are recorded here. The SDK follows Semantic Versioning; its package version
 is independent from the Motifuse `/api/v1` version.
 
+## [1.0.0-beta.3] - 2026-08-27
+
+### Fixed
+
+- Kept Node.js `Buffer` and generic `Uint8Array<ArrayBufferLike>` upload bodies type-safe for
+  consumers using newer TypeScript DOM declarations.
+- Synchronized generated models and executable request examples with the corrected Motifuse
+  production OpenAPI contract.
+
 ## [1.0.0-beta.2] - 2026-08-24
 
 ### Changed
@@ -25,4 +34,5 @@ is independent from the Motifuse `/api/v1` version.
 - ESM package output for Node.js 20 and newer with zero runtime dependencies.
 
 [1.0.0-beta.2]: https://github.com/SyntaxArchitect/motifuse-sdk-typescript/releases/tag/v1.0.0-beta.2
+[1.0.0-beta.3]: https://github.com/SyntaxArchitect/motifuse-sdk-typescript/releases/tag/v1.0.0-beta.3
 [1.0.0-beta.1]: https://github.com/SyntaxArchitect/motifuse-sdk-typescript/releases/tag/v1.0.0-beta.1

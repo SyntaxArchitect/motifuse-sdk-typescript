@@ -242,6 +242,20 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/DocForgeGenerationRequest"
+              },
+              "example": {
+                "template_id": "tpl_invoice",
+                "rows": [
+                  {
+                    "invoice_number": "INV-1042",
+                    "customer_name": "Example Industries",
+                    "total": 2499.5
+                  }
+                ],
+                "output_format": "pdf",
+                "metadata": {
+                  "source": "billing-service"
+                }
               }
             }
           }
@@ -490,6 +504,9 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/DocForgeDownloadRequest"
+              },
+              "example": {
+                "target": "archive"
               }
             }
           }
@@ -654,6 +671,11 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/ReconovaFileRequest"
+              },
+              "example": {
+                "filename": "customer-master.xlsx",
+                "size": 62865,
+                "content_type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
               }
             }
           }
@@ -987,6 +1009,17 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/ReconovaCleanRequest"
+              },
+              "example": {
+                "source_asset_id": "asset_customer_master",
+                "steps": [
+                  {
+                    "type": "trim_whitespace",
+                    "columns": [
+                      "customer_name"
+                    ]
+                  }
+                ]
               }
             }
           }
@@ -1393,6 +1426,14 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/SpectraceProjectRequest"
+              },
+              "example": {
+                "name": "Vendor Contract Review",
+                "reference": "PROC-2026-042",
+                "tags": [
+                  "procurement"
+                ],
+                "priority": "high"
               }
             }
           }
@@ -1551,6 +1592,14 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/SpectraceProjectRequest"
+              },
+              "example": {
+                "name": "Vendor Contract Review",
+                "reference": "PROC-2026-042",
+                "tags": [
+                  "procurement"
+                ],
+                "priority": "high"
               }
             }
           }
@@ -1820,6 +1869,13 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/SpectraceFileRequest"
+              },
+              "example": {
+                "filename": "contract-v2.docx",
+                "content_type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                "size": 38356,
+                "version_label": "v2",
+                "effective_date": "2026-09-01"
               }
             }
           }
@@ -2241,6 +2297,11 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/SpectraceComparisonRequest"
+              },
+              "example": {
+                "baseline_version_id": "stv_baseline",
+                "revised_version_id": "stv_revised",
+                "include_furniture": false
               }
             }
           }
@@ -2428,14 +2489,31 @@
             "name": "status",
             "in": "query",
             "schema": {
-              "type": "string"
+              "type": "string",
+              "enum": [
+                "unreviewed",
+                "under_review",
+                "needs_clarification",
+                "confirmed",
+                "rejected_noise",
+                "action_required",
+                "resolved",
+                "closed"
+              ]
             }
           },
           {
             "name": "importance",
             "in": "query",
             "schema": {
-              "type": "string"
+              "type": "string",
+              "enum": [
+                "INFORMATIONAL",
+                "LOW",
+                "MEDIUM",
+                "HIGH",
+                "CRITICAL"
+              ]
             }
           },
           {
@@ -2600,6 +2678,12 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/FindingReviewRequest"
+              },
+              "example": {
+                "status": "confirmed",
+                "importance": "HIGH",
+                "note": "Validated against change notice CN-042.",
+                "rev": 0
               }
             }
           }
@@ -2982,6 +3066,14 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/WebhookEndpointRequest"
+              },
+              "example": {
+                "url": "https://example.com/webhooks/motifuse",
+                "events": [
+                  "spectrace.comparison.completed",
+                  "spectrace.comparison.failed"
+                ],
+                "description": "Production comparison events"
               }
             }
           }
@@ -3145,6 +3237,10 @@
                     "type": "boolean"
                   }
                 }
+              },
+              "example": {
+                "status": "active",
+                "rotate_secret": false
               }
             }
           }
@@ -3456,6 +3552,17 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/WebhookEvent"
+              },
+              "example": {
+                "id": "evt_example",
+                "type": "spectrace.comparison.completed",
+                "api_version": "2026-08-24",
+                "created": 1787558400,
+                "workspace_id": "ws_example",
+                "data": {
+                  "comparison_id": "stc_example"
+                },
+                "metadata": {}
               }
             }
           }
@@ -3503,6 +3610,17 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/WebhookEvent"
+              },
+              "example": {
+                "id": "evt_example",
+                "type": "spectrace.comparison.completed",
+                "api_version": "2026-08-24",
+                "created": 1787558400,
+                "workspace_id": "ws_example",
+                "data": {
+                  "comparison_id": "stc_example"
+                },
+                "metadata": {}
               }
             }
           }
@@ -3550,6 +3668,17 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/WebhookEvent"
+              },
+              "example": {
+                "id": "evt_example",
+                "type": "spectrace.comparison.completed",
+                "api_version": "2026-08-24",
+                "created": 1787558400,
+                "workspace_id": "ws_example",
+                "data": {
+                  "comparison_id": "stc_example"
+                },
+                "metadata": {}
               }
             }
           }
@@ -3597,6 +3726,17 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/WebhookEvent"
+              },
+              "example": {
+                "id": "evt_example",
+                "type": "spectrace.comparison.completed",
+                "api_version": "2026-08-24",
+                "created": 1787558400,
+                "workspace_id": "ws_example",
+                "data": {
+                  "comparison_id": "stc_example"
+                },
+                "metadata": {}
               }
             }
           }
@@ -3644,6 +3784,17 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/WebhookEvent"
+              },
+              "example": {
+                "id": "evt_example",
+                "type": "spectrace.comparison.completed",
+                "api_version": "2026-08-24",
+                "created": 1787558400,
+                "workspace_id": "ws_example",
+                "data": {
+                  "comparison_id": "stc_example"
+                },
+                "metadata": {}
               }
             }
           }
@@ -3691,6 +3842,17 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/WebhookEvent"
+              },
+              "example": {
+                "id": "evt_example",
+                "type": "spectrace.comparison.completed",
+                "api_version": "2026-08-24",
+                "created": 1787558400,
+                "workspace_id": "ws_example",
+                "data": {
+                  "comparison_id": "stc_example"
+                },
+                "metadata": {}
               }
             }
           }
@@ -3738,6 +3900,17 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/WebhookEvent"
+              },
+              "example": {
+                "id": "evt_example",
+                "type": "spectrace.comparison.completed",
+                "api_version": "2026-08-24",
+                "created": 1787558400,
+                "workspace_id": "ws_example",
+                "data": {
+                  "comparison_id": "stc_example"
+                },
+                "metadata": {}
               }
             }
           }
@@ -3785,6 +3958,17 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/WebhookEvent"
+              },
+              "example": {
+                "id": "evt_example",
+                "type": "spectrace.comparison.completed",
+                "api_version": "2026-08-24",
+                "created": 1787558400,
+                "workspace_id": "ws_example",
+                "data": {
+                  "comparison_id": "stc_example"
+                },
+                "metadata": {}
               }
             }
           }
@@ -3832,6 +4016,17 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/WebhookEvent"
+              },
+              "example": {
+                "id": "evt_example",
+                "type": "spectrace.comparison.completed",
+                "api_version": "2026-08-24",
+                "created": 1787558400,
+                "workspace_id": "ws_example",
+                "data": {
+                  "comparison_id": "stc_example"
+                },
+                "metadata": {}
               }
             }
           }
@@ -3879,6 +4074,17 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/WebhookEvent"
+              },
+              "example": {
+                "id": "evt_example",
+                "type": "spectrace.comparison.completed",
+                "api_version": "2026-08-24",
+                "created": 1787558400,
+                "workspace_id": "ws_example",
+                "data": {
+                  "comparison_id": "stc_example"
+                },
+                "metadata": {}
               }
             }
           }
@@ -3926,6 +4132,17 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/WebhookEvent"
+              },
+              "example": {
+                "id": "evt_example",
+                "type": "spectrace.comparison.completed",
+                "api_version": "2026-08-24",
+                "created": 1787558400,
+                "workspace_id": "ws_example",
+                "data": {
+                  "comparison_id": "stc_example"
+                },
+                "metadata": {}
               }
             }
           }
@@ -3973,6 +4190,17 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/WebhookEvent"
+              },
+              "example": {
+                "id": "evt_example",
+                "type": "spectrace.comparison.completed",
+                "api_version": "2026-08-24",
+                "created": 1787558400,
+                "workspace_id": "ws_example",
+                "data": {
+                  "comparison_id": "stc_example"
+                },
+                "metadata": {}
               }
             }
           }
@@ -4020,6 +4248,17 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/WebhookEvent"
+              },
+              "example": {
+                "id": "evt_example",
+                "type": "spectrace.comparison.completed",
+                "api_version": "2026-08-24",
+                "created": 1787558400,
+                "workspace_id": "ws_example",
+                "data": {
+                  "comparison_id": "stc_example"
+                },
+                "metadata": {}
               }
             }
           }
@@ -4067,6 +4306,17 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/WebhookEvent"
+              },
+              "example": {
+                "id": "evt_example",
+                "type": "spectrace.comparison.completed",
+                "api_version": "2026-08-24",
+                "created": 1787558400,
+                "workspace_id": "ws_example",
+                "data": {
+                  "comparison_id": "stc_example"
+                },
+                "metadata": {}
               }
             }
           }
@@ -4114,6 +4364,17 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/WebhookEvent"
+              },
+              "example": {
+                "id": "evt_example",
+                "type": "spectrace.comparison.completed",
+                "api_version": "2026-08-24",
+                "created": 1787558400,
+                "workspace_id": "ws_example",
+                "data": {
+                  "comparison_id": "stc_example"
+                },
+                "metadata": {}
               }
             }
           }
@@ -4161,6 +4422,17 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/WebhookEvent"
+              },
+              "example": {
+                "id": "evt_example",
+                "type": "spectrace.comparison.completed",
+                "api_version": "2026-08-24",
+                "created": 1787558400,
+                "workspace_id": "ws_example",
+                "data": {
+                  "comparison_id": "stc_example"
+                },
+                "metadata": {}
               }
             }
           }
@@ -4208,6 +4480,17 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/WebhookEvent"
+              },
+              "example": {
+                "id": "evt_example",
+                "type": "spectrace.comparison.completed",
+                "api_version": "2026-08-24",
+                "created": 1787558400,
+                "workspace_id": "ws_example",
+                "data": {
+                  "comparison_id": "stc_example"
+                },
+                "metadata": {}
               }
             }
           }
@@ -4255,6 +4538,17 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/WebhookEvent"
+              },
+              "example": {
+                "id": "evt_example",
+                "type": "spectrace.comparison.completed",
+                "api_version": "2026-08-24",
+                "created": 1787558400,
+                "workspace_id": "ws_example",
+                "data": {
+                  "comparison_id": "stc_example"
+                },
+                "metadata": {}
               }
             }
           }
@@ -5249,13 +5543,20 @@
         ],
         "properties": {
           "id": {
-            "type": "string"
+            "type": "string",
+            "pattern": "^stf2_[0-9a-f]{28}$"
           },
           "object": {
             "const": "finding"
           },
           "comparison_id": {
             "type": "string"
+          },
+          "project_id": {
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "change_types": {
             "type": "array",
@@ -5265,6 +5566,48 @@
           },
           "primary_change_type": {
             "type": "string"
+          },
+          "change_family": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "change_type": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "change_sub_type": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "semantic_type": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "semantic_sub_type": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "structural_type": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "reason_code": {
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "old_text": {
             "type": "string"
@@ -5302,18 +5645,74 @@
               "type": "object"
             }
           },
+          "typed_delta": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "additionalProperties": true
+          },
           "confidence": {
-            "type": "number"
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          },
+          "confidence_details": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "additionalProperties": true
           },
           "status": {
-            "type": "string"
+            "type": "string",
+            "enum": [
+              "unreviewed",
+              "under_review",
+              "needs_clarification",
+              "confirmed",
+              "rejected_noise",
+              "action_required",
+              "resolved",
+              "closed"
+            ]
           },
-          "importance": {},
+          "importance": {
+            "type": "string",
+            "enum": [
+              "INFORMATIONAL",
+              "LOW",
+              "MEDIUM",
+              "HIGH",
+              "CRITICAL"
+            ]
+          },
+          "importance_details": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "additionalProperties": true
+          },
           "explanation": {
             "type": "string"
           },
           "note": {
             "type": "string"
+          },
+          "review": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "additionalProperties": true
+          },
+          "evidence": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "additionalProperties": true
           },
           "reviewed_at": {
             "type": [
@@ -5323,15 +5722,21 @@
             "format": "date-time"
           },
           "created_at": {
-            "type": "string",
+            "type": [
+              "string",
+              "null"
+            ],
             "format": "date-time"
           },
           "updated_at": {
-            "type": "string",
+            "type": [
+              "string",
+              "null"
+            ],
             "format": "date-time"
           }
         },
-        "additionalProperties": true
+        "additionalProperties": false
       },
       "FindingList": {
         "type": "object",
@@ -5589,22 +5994,50 @@
       "FindingReviewRequest": {
         "type": "object",
         "additionalProperties": false,
+        "required": [
+          "rev"
+        ],
         "properties": {
           "status": {
-            "type": "string"
+            "type": "string",
+            "enum": [
+              "unreviewed",
+              "under_review",
+              "needs_clarification",
+              "confirmed",
+              "rejected_noise",
+              "action_required",
+              "resolved",
+              "closed"
+            ]
           },
-          "importance": {},
+          "importance": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "INFORMATIONAL",
+              "LOW",
+              "MEDIUM",
+              "HIGH",
+              "CRITICAL",
+              null
+            ],
+            "description": "Override the engine-assigned importance. Null restores the engine value."
+          },
           "note": {
             "type": "string",
-            "maxLength": 4000
+            "maxLength": 8000
           },
           "reason": {
             "type": "string",
-            "maxLength": 1000
+            "maxLength": 2000
           },
           "rev": {
             "type": "integer",
-            "minimum": 1
+            "minimum": 0,
+            "description": "Optimistic-concurrency revision returned in finding.review.rev."
           }
         }
       },
