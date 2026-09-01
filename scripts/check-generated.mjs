@@ -13,7 +13,9 @@ const actual =
   banner + astToString(await openapiTS(source, { alphabetize: true, defaultNonNullable: false }));
 
 const expected = await readFile(generated, "utf8");
-if (expected !== actual) {
+const normalizeLineEndings = (value) => value.replace(/\r\n?/g, "\n");
+
+if (normalizeLineEndings(expected) !== normalizeLineEndings(actual)) {
   console.error("Generated OpenAPI declarations are stale. Run npm run openapi:generate.");
   process.exitCode = 1;
 } else {
