@@ -10,17 +10,17 @@ test("the vendored OpenAPI contract is the unified production v1 surface", () =>
   assert.equal(document.openapi, "3.1.2");
   assert.equal(document.info.version, "1.0.0");
   assert.equal(document.servers[0].url, "https://motifuse.com/api/v1");
-  assert.equal(Object.keys(document.paths).length, 31);
+  assert.equal(Object.keys(document.paths).length, 32);
   const operations = Object.values(document.paths).flatMap((item) =>
     ["get", "post", "patch", "delete"].flatMap((method) => (item[method] ? [item[method]] : [])),
   );
-  assert.equal(operations.length, 41);
-  assert.equal(new Set(operations.map((operation) => operation.operationId)).size, 41);
+  assert.equal(operations.length, 42);
+  assert.equal(new Set(operations.map((operation) => operation.operationId)).size, 42);
 });
 
 test("the contract includes only supported products and named typed collection responses", () => {
   for (const path of Object.keys(document.paths)) {
-    assert.match(path, /^\/(docforge|reconova|spectrace|webhooks|usage)/);
+    assert.match(path, /^\/(docforge|reconova|spectrace|webhooks|usage|logs)/);
   }
   assert.equal(
     document.paths["/spectrace/comparisons/{comparison_id}/findings"].get.responses[200].content[
