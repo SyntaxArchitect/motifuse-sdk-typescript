@@ -56,14 +56,17 @@
     "format:check": "prettier --check .",
     "lint": "eslint src tests scripts",
     "typecheck": "tsc --noEmit",
-    "test": "npm run build && node --test tests/*.test.mjs",
+    "test": "npm run build && npm run examples:build && node --test tests/*.test.mjs",
     "examples:check": "npm run build && tsc --noEmit -p tsconfig.examples.json",
     "consumer:check": "npm run build && node scripts/check-consumer.mjs",
     "openapi:generate": "openapi-typescript openapi/motifuse.openapi.json -o src/generated/schema.d.ts --alphabetize --default-non-nullable false",
     "openapi:check": "node scripts/check-generated.mjs",
     "openapi:upstream": "node scripts/check-upstream.mjs",
     "package:check": "npm run build && node scripts/check-package.mjs",
-    "check": "npm run format:check && npm run lint && npm run typecheck && npm run openapi:check && npm test && npm run examples:check && npm run package:check && npm run consumer:check"
+    "check": "npm run format:check && npm run lint && npm run typecheck && npm run openapi:check && npm test && npm run examples:check && npm run package:check && npm run consumer:check",
+    "examples:build": "tsc -p tsconfig.examples.json --noEmit false --outDir .examples-build",
+    "examples:run": "npm run examples:build && node .examples-build/examples/run.js",
+    "examples:test": "npm run examples:build && node --test tests/examples.test.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

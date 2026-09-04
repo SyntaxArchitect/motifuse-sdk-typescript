@@ -1,7 +1,8 @@
+import { sleep as wait } from "./sleep.js";
 import { MotifuseError, type MotifuseProblem } from "./errors.js";
 import { attachResponseMetadata, type ResponseMetadata } from "./metadata.js";
 
-export const SDK_VERSION = "1.0.0-beta.1";
+export const SDK_VERSION = "1.0.0-beta.3";
 export const DEFAULT_BASE_URL = "https://motifuse.com/api/v1";
 
 export type FetchImplementation = typeof globalThis.fetch;
@@ -97,23 +98,6 @@ function joinSignal(
   };
 }
 
-function wait(milliseconds: number, signal?: AbortSignal): Promise<void> {
-  return new Promise((resolve, reject) => {
-    const abortReason = () =>
-      signal?.reason instanceof Error ? signal.reason : new Error("The request was aborted.");
-    if (signal?.aborted) return reject(abortReason());
-    const timer = setTimeout(resolve, milliseconds);
-    signal?.addEventListener(
-      "abort",
-      () => {
-        clearTimeout(timer);
-        reject(abortReason());
-      },
-      { once: true },
-    );
-  });
-}
-
 function retryDelay(attempt: number, response?: Response): number {
   const serverSeconds = response
     ? retryAfterSeconds(response.headers.get("retry-after"))
@@ -202,6 +186,7 @@ export class ApiClient {
     const retrySafe = SAFE_METHODS.has(method) || Boolean(input.idempotencyKey);
 
     for (let attempt = 0; ; attempt += 1) {
+      input.signal?.throwIfAborted();
       const combined = joinSignal(input.signal, input.timeout ?? this.timeout);
       try {
         const response = await this.fetch(url, {
@@ -256,6 +241,7 @@ export class ApiClient {
   }
 
   async upload(url: string, init: RequestInit, signal?: AbortSignal): Promise<void> {
+    signal?.throwIfAborted();
     const combined = joinSignal(signal, this.timeout);
     try {
       const response = await this.fetch(url, {

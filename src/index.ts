@@ -1,6 +1,7 @@
 import { ApiClient, type MotifuseOptions } from "./core/client.js";
 import { DocForgeResource } from "./resources/docforge.js";
 import { JobsResource } from "./resources/jobs.js";
+import { LogsResource } from "./resources/logs.js";
 import { ReconovaResource } from "./resources/reconova.js";
 import { SpectraceResource } from "./resources/spectrace.js";
 import { UsageResource } from "./resources/usage.js";
@@ -11,6 +12,7 @@ export class Motifuse {
   readonly reconova: ReconovaResource;
   readonly spectrace: SpectraceResource;
   readonly jobs: JobsResource;
+  readonly logs: LogsResource;
   readonly webhooks: WebhooksResource;
   readonly usage: UsageResource;
 
@@ -20,6 +22,7 @@ export class Motifuse {
     this.reconova = new ReconovaResource(client);
     this.spectrace = new SpectraceResource(client);
     this.jobs = new JobsResource(client);
+    this.logs = new LogsResource(client);
     this.webhooks = new WebhooksResource(client);
     this.usage = new UsageResource(client);
   }

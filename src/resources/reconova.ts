@@ -59,8 +59,9 @@ export class ReconovaFilesResource {
     uploadOptions: FileUploadOptions,
     requestOptions: RequestOptions = {},
   ): Promise<MotifuseFile> {
+    const signal = uploadOptions.signal ?? requestOptions.signal;
     const idempotencyKey = uploadOptions.idempotencyKey ?? `sdk_${crypto.randomUUID()}`;
-    const file = await this.createUpload(input, { ...requestOptions, idempotencyKey });
+    const file = await this.createUpload(input, { ...requestOptions, signal, idempotencyKey });
     if (!file.upload?.url) {
       throw new MotifuseError("The API did not return an upload authorization.", {
         code: "upload_authorization_missing",
@@ -73,11 +74,11 @@ export class ReconovaFilesResource {
         headers: file.upload.headers,
         body: uploadOptions.body as BodyInit,
       },
-      uploadOptions.signal,
+      signal,
     );
     return this.complete(file.id, {
       ...requestOptions,
-      signal: uploadOptions.signal,
+      signal,
       idempotencyKey: `${idempotencyKey}_complete`,
     });
   }

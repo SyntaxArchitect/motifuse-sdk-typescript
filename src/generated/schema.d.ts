@@ -16,7 +16,7 @@ export interface paths {
         put?: never;
         /**
          * Start a document generation
-         * @description Pins a published template version, reserves server-owned quota once, stores canonical input, and dispatches an asynchronous worker job.
+         * @description Pins a published template version, reserves quota once, records canonical input, and queues asynchronous generation.
          */
         post: operations["docforgeCreateGeneration"];
         delete?: never;
@@ -85,6 +85,23 @@ export interface paths {
         };
         /** List published templates */
         get: operations["docforgeListTemplates"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/logs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List redacted API request logs */
+        get: operations["listApiRequestLogs"];
         put?: never;
         post?: never;
         delete?: never;
@@ -256,7 +273,7 @@ export interface paths {
         };
         /**
          * Download a comparison export
-         * @description Returns only export formats implemented by Spectrace (CSV or JSON, selected by query).
+         * @description Returns only export formats implemented by SpecTrace (CSV or JSON, selected by query).
          */
         get: operations["spectraceExportComparison"];
         put?: never;
@@ -360,7 +377,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get Spectrace worker job status */
+        /** Get SpecTrace job status */
         get: operations["spectraceGetJob"];
         put?: never;
         post?: never;
@@ -379,7 +396,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Cancel a Spectrace job */
+        /** Cancel a SpecTrace job */
         post: operations["spectraceCancelJob"];
         delete?: never;
         options?: never;
@@ -436,7 +453,7 @@ export interface paths {
         put?: never;
         /**
          * Start deterministic comparison
-         * @description Runs the deterministic comparison engine. Generative AI is not used in this path.
+         * @description Queues the deterministic comparison engine and returns immediately. Generative AI is not used in this path.
          */
         post: operations["spectraceCreateComparison"];
         delete?: never;
@@ -515,7 +532,7 @@ export interface paths {
         delete: operations["deleteWebhookEndpoint"];
         options?: never;
         head?: never;
-        /** Pause, enable, or rotate a webhook endpoint secret */
+        /** Edit, pause, enable, or rotate a webhook endpoint */
         patch: operations["updateWebhookEndpoint"];
         trace?: never;
     };
@@ -864,6 +881,28 @@ export interface webhooks {
 }
 export interface components {
     schemas: {
+        ApiRequest: {
+            api_key_prefix?: string | null;
+            endpoint: string;
+            /** @enum {string} */
+            environment: "live" | "test";
+            id: string;
+            latency_ms: number;
+            method: string;
+            /** @constant */
+            object: "api_request";
+            /** @enum {string} */
+            product: "docforge" | "reconova" | "spectrace";
+            request_id: string;
+            status: number;
+            /** Format: date-time */
+            timestamp: string;
+        };
+        ApiRequestList: {
+            data: components["schemas"]["ApiRequest"][];
+            has_more: boolean;
+            next_cursor: string | null;
+        };
         Comparison: {
             baseline_version_id?: string;
             confidence?: number | null;
@@ -934,12 +973,20 @@ export interface components {
             next_cursor: string | null;
         };
         File: {
+            /** @description SpecTrace: bytes are ready and the server permits access after scanning; this alone does not establish comparison readiness. */
+            available?: boolean;
+            /** @description SpecTrace: extraction produced usable comparison content. Require both available and comparison_eligible before comparing. */
+            comparison_eligible?: boolean;
             /** Format: date-time */
             created_at?: string | null;
+            /** @description SpecTrace document identity; use it to attach a revised version to the same document. */
+            document_id?: string | null;
+            extraction_status?: string;
             filename?: string | null;
             format?: string | null;
             id: string;
             job?: components["schemas"]["Job"] | null;
+            malware_scan_status?: string;
             /** @constant */
             object: "file";
             /** @enum {string} */
@@ -1175,16 +1222,21 @@ export interface components {
             url: string;
         };
         Usage: {
+            authorized_products?: ("docforge" | "reconova" | "spectrace")[];
             /** @enum {string} */
             environment: "live" | "test";
             /** Format: date-time */
             generated_at: string;
+            note?: string;
             /** @constant */
             object: "usage";
+            /** Format: date-time */
+            period_start?: string | null;
+            /** @description Only products both currently API-entitled and authorized by this key are returned. */
             products: {
-                docforge: components["schemas"]["ProductUsage"];
-                reconova: components["schemas"]["ProductUsage"];
-                spectrace: components["schemas"]["ProductUsage"];
+                docforge?: components["schemas"]["ProductUsage"];
+                reconova?: components["schemas"]["ProductUsage"];
+                spectrace?: components["schemas"]["ProductUsage"];
             };
         };
         UsageMetric: {
@@ -1459,7 +1511,7 @@ export interface components {
                 "application/problem+json": components["schemas"]["Problem"];
             };
         };
-        /** @description The product or worker dispatch is temporarily unavailable. */
+        /** @description The product or its processing capacity is temporarily unavailable. */
         Unavailable: {
             headers: {
                 "X-Request-Id": components["headers"]["RequestId"];
@@ -1469,9 +1521,9 @@ export interface components {
                 /**
                  * @example {
                  *       "type": "https://motifuse.com/problems/service-unavailable",
-                 *       "title": "The product or worker dispatch is temporarily unavailable.",
+                 *       "title": "The product or its processing capacity is temporarily unavailable.",
                  *       "status": 503,
-                 *       "detail": "The product or worker dispatch is temporarily unavailable.",
+                 *       "detail": "The product or its processing capacity is temporarily unavailable.",
                  *       "instance": "/api/v1/example",
                  *       "code": "service_unavailable",
                  *       "request_id": "req_01H…"
@@ -1510,6 +1562,12 @@ export interface components {
     };
     requestBodies: never;
     headers: {
+        /** @description Workspace/product requests permitted in the current window. */
+        RateLimitLimit: number;
+        /** @description Workspace/product requests remaining in the current window. */
+        RateLimitRemaining: number;
+        /** @description Seconds until the current rate-limit window resets. */
+        RateLimitReset: number;
         /** @description Correlation ID for support and logs. */
         RequestId: string;
         /** @description Seconds to wait before retrying. */
@@ -1537,6 +1595,10 @@ export interface operations {
             /** @description Cursor-paginated jobs. */
             200: {
                 headers: {
+                    "RateLimit-Limit": components["headers"]["RateLimitLimit"];
+                    "RateLimit-Remaining": components["headers"]["RateLimitRemaining"];
+                    "RateLimit-Reset": components["headers"]["RateLimitReset"];
+                    "X-Request-Id": components["headers"]["RequestId"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -1592,6 +1654,10 @@ export interface operations {
             /** @description Idempotent replay of an existing generation. */
             200: {
                 headers: {
+                    "RateLimit-Limit": components["headers"]["RateLimitLimit"];
+                    "RateLimit-Remaining": components["headers"]["RateLimitRemaining"];
+                    "RateLimit-Reset": components["headers"]["RateLimitReset"];
+                    "X-Request-Id": components["headers"]["RequestId"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -1601,6 +1667,10 @@ export interface operations {
             /** @description Generation accepted. */
             202: {
                 headers: {
+                    "RateLimit-Limit": components["headers"]["RateLimitLimit"];
+                    "RateLimit-Remaining": components["headers"]["RateLimitRemaining"];
+                    "RateLimit-Reset": components["headers"]["RateLimitReset"];
+                    "X-Request-Id": components["headers"]["RequestId"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -1637,6 +1707,10 @@ export interface operations {
             /** @description Generation state. */
             200: {
                 headers: {
+                    "RateLimit-Limit": components["headers"]["RateLimitLimit"];
+                    "RateLimit-Remaining": components["headers"]["RateLimitRemaining"];
+                    "RateLimit-Reset": components["headers"]["RateLimitReset"];
+                    "X-Request-Id": components["headers"]["RequestId"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -1673,6 +1747,10 @@ export interface operations {
             /** @description Cancellation accepted or completed. */
             202: {
                 headers: {
+                    "RateLimit-Limit": components["headers"]["RateLimitLimit"];
+                    "RateLimit-Remaining": components["headers"]["RateLimitRemaining"];
+                    "RateLimit-Reset": components["headers"]["RateLimitReset"];
+                    "X-Request-Id": components["headers"]["RequestId"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -1718,6 +1796,10 @@ export interface operations {
             /** @description Short-lived signed R2 download. */
             200: {
                 headers: {
+                    "RateLimit-Limit": components["headers"]["RateLimitLimit"];
+                    "RateLimit-Remaining": components["headers"]["RateLimitRemaining"];
+                    "RateLimit-Reset": components["headers"]["RateLimitReset"];
+                    "X-Request-Id": components["headers"]["RequestId"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -1755,10 +1837,54 @@ export interface operations {
             /** @description Cursor-paginated templates. */
             200: {
                 headers: {
+                    "RateLimit-Limit": components["headers"]["RateLimitLimit"];
+                    "RateLimit-Remaining": components["headers"]["RateLimitRemaining"];
+                    "RateLimit-Reset": components["headers"]["RateLimitReset"];
+                    "X-Request-Id": components["headers"]["RequestId"];
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["DocForgeTemplateList"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            402: components["responses"]["PaymentRequired"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["Unprocessable"];
+            429: components["responses"]["RateLimited"];
+            500: components["responses"]["InternalError"];
+            503: components["responses"]["Unavailable"];
+        };
+    };
+    listApiRequestLogs: {
+        parameters: {
+            query?: {
+                cursor?: string | null;
+                limit?: number;
+            };
+            header?: {
+                /** @description Optional caller correlation ID. Motifuse returns a request ID on every response. */
+                "X-Request-Id"?: components["parameters"]["RequestId"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Workspace-, environment-, and entitled-product-filtered request metadata. */
+            200: {
+                headers: {
+                    "RateLimit-Limit": components["headers"]["RateLimitLimit"];
+                    "RateLimit-Remaining": components["headers"]["RateLimitRemaining"];
+                    "RateLimit-Reset": components["headers"]["RateLimitReset"];
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiRequestList"];
                 };
             };
             400: components["responses"]["BadRequest"];
@@ -1791,6 +1917,10 @@ export interface operations {
             /** @description Cursor-paginated files and processing status. */
             200: {
                 headers: {
+                    "RateLimit-Limit": components["headers"]["RateLimitLimit"];
+                    "RateLimit-Remaining": components["headers"]["RateLimitRemaining"];
+                    "RateLimit-Reset": components["headers"]["RateLimitReset"];
+                    "X-Request-Id": components["headers"]["RequestId"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -1837,6 +1967,10 @@ export interface operations {
             /** @description Upload authorization. */
             201: {
                 headers: {
+                    "RateLimit-Limit": components["headers"]["RateLimitLimit"];
+                    "RateLimit-Remaining": components["headers"]["RateLimitRemaining"];
+                    "RateLimit-Reset": components["headers"]["RateLimitReset"];
+                    "X-Request-Id": components["headers"]["RequestId"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -1873,6 +2007,10 @@ export interface operations {
             /** @description File metadata and current status. */
             200: {
                 headers: {
+                    "RateLimit-Limit": components["headers"]["RateLimitLimit"];
+                    "RateLimit-Remaining": components["headers"]["RateLimitRemaining"];
+                    "RateLimit-Reset": components["headers"]["RateLimitReset"];
+                    "X-Request-Id": components["headers"]["RequestId"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -1911,6 +2049,10 @@ export interface operations {
             /** @description The already-completed upload and existing job. */
             200: {
                 headers: {
+                    "RateLimit-Limit": components["headers"]["RateLimitLimit"];
+                    "RateLimit-Remaining": components["headers"]["RateLimitRemaining"];
+                    "RateLimit-Reset": components["headers"]["RateLimitReset"];
+                    "X-Request-Id": components["headers"]["RequestId"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -1920,6 +2062,10 @@ export interface operations {
             /** @description Upload verified; intake job created. */
             201: {
                 headers: {
+                    "RateLimit-Limit": components["headers"]["RateLimitLimit"];
+                    "RateLimit-Remaining": components["headers"]["RateLimitRemaining"];
+                    "RateLimit-Reset": components["headers"]["RateLimitReset"];
+                    "X-Request-Id": components["headers"]["RequestId"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -1929,6 +2075,10 @@ export interface operations {
             /** @description Upload verified; dispatch deferred safely. */
             202: {
                 headers: {
+                    "RateLimit-Limit": components["headers"]["RateLimitLimit"];
+                    "RateLimit-Remaining": components["headers"]["RateLimitRemaining"];
+                    "RateLimit-Reset": components["headers"]["RateLimitReset"];
+                    "X-Request-Id": components["headers"]["RequestId"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -1965,6 +2115,10 @@ export interface operations {
             /** @description Short-lived signed R2 download. */
             200: {
                 headers: {
+                    "RateLimit-Limit": components["headers"]["RateLimitLimit"];
+                    "RateLimit-Remaining": components["headers"]["RateLimitRemaining"];
+                    "RateLimit-Reset": components["headers"]["RateLimitReset"];
+                    "X-Request-Id": components["headers"]["RequestId"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -2002,6 +2156,10 @@ export interface operations {
             /** @description Cursor-paginated jobs. */
             200: {
                 headers: {
+                    "RateLimit-Limit": components["headers"]["RateLimitLimit"];
+                    "RateLimit-Remaining": components["headers"]["RateLimitRemaining"];
+                    "RateLimit-Reset": components["headers"]["RateLimitReset"];
+                    "X-Request-Id": components["headers"]["RequestId"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -2038,6 +2196,10 @@ export interface operations {
             /** @description Job state. */
             200: {
                 headers: {
+                    "RateLimit-Limit": components["headers"]["RateLimitLimit"];
+                    "RateLimit-Remaining": components["headers"]["RateLimitRemaining"];
+                    "RateLimit-Reset": components["headers"]["RateLimitReset"];
+                    "X-Request-Id": components["headers"]["RequestId"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -2074,6 +2236,10 @@ export interface operations {
             /** @description Cancellation accepted or completed. */
             202: {
                 headers: {
+                    "RateLimit-Limit": components["headers"]["RateLimitLimit"];
+                    "RateLimit-Remaining": components["headers"]["RateLimitRemaining"];
+                    "RateLimit-Reset": components["headers"]["RateLimitReset"];
+                    "X-Request-Id": components["headers"]["RequestId"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -2126,6 +2292,10 @@ export interface operations {
             /** @description Cleaning job created. */
             201: {
                 headers: {
+                    "RateLimit-Limit": components["headers"]["RateLimitLimit"];
+                    "RateLimit-Remaining": components["headers"]["RateLimitRemaining"];
+                    "RateLimit-Reset": components["headers"]["RateLimitReset"];
+                    "X-Request-Id": components["headers"]["RequestId"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -2135,6 +2305,10 @@ export interface operations {
             /** @description Cleaning job accepted. */
             202: {
                 headers: {
+                    "RateLimit-Limit": components["headers"]["RateLimitLimit"];
+                    "RateLimit-Remaining": components["headers"]["RateLimitRemaining"];
+                    "RateLimit-Reset": components["headers"]["RateLimitReset"];
+                    "X-Request-Id": components["headers"]["RequestId"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -2161,7 +2335,7 @@ export interface operations {
                 "X-Request-Id"?: components["parameters"]["RequestId"];
             };
             path: {
-                /** @description Spectrace comparison ID. */
+                /** @description SpecTrace comparison ID. */
                 comparison_id: string;
             };
             cookie?: never;
@@ -2171,6 +2345,10 @@ export interface operations {
             /** @description Comparison state and summary. */
             200: {
                 headers: {
+                    "RateLimit-Limit": components["headers"]["RateLimitLimit"];
+                    "RateLimit-Remaining": components["headers"]["RateLimitRemaining"];
+                    "RateLimit-Reset": components["headers"]["RateLimitReset"];
+                    "X-Request-Id": components["headers"]["RequestId"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -2199,7 +2377,7 @@ export interface operations {
                 "X-Request-Id"?: components["parameters"]["RequestId"];
             };
             path: {
-                /** @description Spectrace comparison ID. */
+                /** @description SpecTrace comparison ID. */
                 comparison_id: string;
             };
             cookie?: never;
@@ -2242,7 +2420,7 @@ export interface operations {
                 "X-Request-Id"?: components["parameters"]["RequestId"];
             };
             path: {
-                /** @description Spectrace comparison ID. */
+                /** @description SpecTrace comparison ID. */
                 comparison_id: string;
             };
             cookie?: never;
@@ -2252,6 +2430,10 @@ export interface operations {
             /** @description Cursor-paginated findings. */
             200: {
                 headers: {
+                    "RateLimit-Limit": components["headers"]["RateLimitLimit"];
+                    "RateLimit-Remaining": components["headers"]["RateLimitRemaining"];
+                    "RateLimit-Reset": components["headers"]["RateLimitReset"];
+                    "X-Request-Id": components["headers"]["RequestId"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -2278,7 +2460,7 @@ export interface operations {
                 "X-Request-Id"?: components["parameters"]["RequestId"];
             };
             path: {
-                /** @description Spectrace version/file ID. */
+                /** @description SpecTrace version/file ID. */
                 file_id: string;
             };
             cookie?: never;
@@ -2288,6 +2470,10 @@ export interface operations {
             /** @description File state. */
             200: {
                 headers: {
+                    "RateLimit-Limit": components["headers"]["RateLimitLimit"];
+                    "RateLimit-Remaining": components["headers"]["RateLimitRemaining"];
+                    "RateLimit-Reset": components["headers"]["RateLimitReset"];
+                    "X-Request-Id": components["headers"]["RequestId"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -2316,7 +2502,7 @@ export interface operations {
                 "X-Request-Id"?: components["parameters"]["RequestId"];
             };
             path: {
-                /** @description Spectrace version/file ID. */
+                /** @description SpecTrace version/file ID. */
                 file_id: string;
             };
             cookie?: never;
@@ -2326,6 +2512,10 @@ export interface operations {
             /** @description Upload verified; security processing queued, or an existing completed upload returned. */
             200: {
                 headers: {
+                    "RateLimit-Limit": components["headers"]["RateLimitLimit"];
+                    "RateLimit-Remaining": components["headers"]["RateLimitRemaining"];
+                    "RateLimit-Reset": components["headers"]["RateLimitReset"];
+                    "X-Request-Id": components["headers"]["RequestId"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -2352,7 +2542,7 @@ export interface operations {
                 "X-Request-Id"?: components["parameters"]["RequestId"];
             };
             path: {
-                /** @description Spectrace version/file ID. */
+                /** @description SpecTrace version/file ID. */
                 file_id: string;
             };
             cookie?: never;
@@ -2389,7 +2579,7 @@ export interface operations {
                 "X-Request-Id"?: components["parameters"]["RequestId"];
             };
             path: {
-                /** @description Spectrace finding ID. */
+                /** @description SpecTrace finding ID. */
                 finding_id: string;
             };
             cookie?: never;
@@ -2399,6 +2589,10 @@ export interface operations {
             /** @description Finding with evidence and locators. */
             200: {
                 headers: {
+                    "RateLimit-Limit": components["headers"]["RateLimitLimit"];
+                    "RateLimit-Remaining": components["headers"]["RateLimitRemaining"];
+                    "RateLimit-Reset": components["headers"]["RateLimitReset"];
+                    "X-Request-Id": components["headers"]["RequestId"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -2425,7 +2619,7 @@ export interface operations {
                 "X-Request-Id"?: components["parameters"]["RequestId"];
             };
             path: {
-                /** @description Spectrace finding ID. */
+                /** @description SpecTrace finding ID. */
                 finding_id: string;
             };
             cookie?: never;
@@ -2447,6 +2641,10 @@ export interface operations {
             /** @description Reviewed finding. */
             200: {
                 headers: {
+                    "RateLimit-Limit": components["headers"]["RateLimitLimit"];
+                    "RateLimit-Remaining": components["headers"]["RateLimitRemaining"];
+                    "RateLimit-Reset": components["headers"]["RateLimitReset"];
+                    "X-Request-Id": components["headers"]["RequestId"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -2473,7 +2671,7 @@ export interface operations {
                 "X-Request-Id"?: components["parameters"]["RequestId"];
             };
             path: {
-                /** @description Spectrace job ID. */
+                /** @description SpecTrace job ID. */
                 job_id: string;
             };
             cookie?: never;
@@ -2483,6 +2681,10 @@ export interface operations {
             /** @description Job state. */
             200: {
                 headers: {
+                    "RateLimit-Limit": components["headers"]["RateLimitLimit"];
+                    "RateLimit-Remaining": components["headers"]["RateLimitRemaining"];
+                    "RateLimit-Reset": components["headers"]["RateLimitReset"];
+                    "X-Request-Id": components["headers"]["RequestId"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -2509,7 +2711,7 @@ export interface operations {
                 "X-Request-Id"?: components["parameters"]["RequestId"];
             };
             path: {
-                /** @description Spectrace job ID. */
+                /** @description SpecTrace job ID. */
                 job_id: string;
             };
             cookie?: never;
@@ -2519,6 +2721,10 @@ export interface operations {
             /** @description Cancellation accepted. */
             202: {
                 headers: {
+                    "RateLimit-Limit": components["headers"]["RateLimitLimit"];
+                    "RateLimit-Remaining": components["headers"]["RateLimitRemaining"];
+                    "RateLimit-Reset": components["headers"]["RateLimitReset"];
+                    "X-Request-Id": components["headers"]["RequestId"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -2555,6 +2761,10 @@ export interface operations {
             /** @description Cursor-paginated projects. */
             200: {
                 headers: {
+                    "RateLimit-Limit": components["headers"]["RateLimitLimit"];
+                    "RateLimit-Remaining": components["headers"]["RateLimitRemaining"];
+                    "RateLimit-Reset": components["headers"]["RateLimitReset"];
+                    "X-Request-Id": components["headers"]["RequestId"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -2604,6 +2814,10 @@ export interface operations {
             /** @description Project created. */
             201: {
                 headers: {
+                    "RateLimit-Limit": components["headers"]["RateLimitLimit"];
+                    "RateLimit-Remaining": components["headers"]["RateLimitRemaining"];
+                    "RateLimit-Reset": components["headers"]["RateLimitReset"];
+                    "X-Request-Id": components["headers"]["RequestId"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -2630,7 +2844,7 @@ export interface operations {
                 "X-Request-Id"?: components["parameters"]["RequestId"];
             };
             path: {
-                /** @description Spectrace project ID. */
+                /** @description SpecTrace project ID. */
                 project_id: string;
             };
             cookie?: never;
@@ -2640,6 +2854,10 @@ export interface operations {
             /** @description Project. */
             200: {
                 headers: {
+                    "RateLimit-Limit": components["headers"]["RateLimitLimit"];
+                    "RateLimit-Remaining": components["headers"]["RateLimitRemaining"];
+                    "RateLimit-Reset": components["headers"]["RateLimitReset"];
+                    "X-Request-Id": components["headers"]["RequestId"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -2666,7 +2884,7 @@ export interface operations {
                 "X-Request-Id"?: components["parameters"]["RequestId"];
             };
             path: {
-                /** @description Spectrace project ID. */
+                /** @description SpecTrace project ID. */
                 project_id: string;
             };
             cookie?: never;
@@ -2676,6 +2894,10 @@ export interface operations {
             /** @description Project scheduled for retention-safe deletion. */
             200: {
                 headers: {
+                    "RateLimit-Limit": components["headers"]["RateLimitLimit"];
+                    "RateLimit-Remaining": components["headers"]["RateLimitRemaining"];
+                    "RateLimit-Reset": components["headers"]["RateLimitReset"];
+                    "X-Request-Id": components["headers"]["RequestId"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -2706,7 +2928,7 @@ export interface operations {
                 "X-Request-Id"?: components["parameters"]["RequestId"];
             };
             path: {
-                /** @description Spectrace project ID. */
+                /** @description SpecTrace project ID. */
                 project_id: string;
             };
             cookie?: never;
@@ -2730,6 +2952,10 @@ export interface operations {
             /** @description Updated project. */
             200: {
                 headers: {
+                    "RateLimit-Limit": components["headers"]["RateLimitLimit"];
+                    "RateLimit-Remaining": components["headers"]["RateLimitRemaining"];
+                    "RateLimit-Reset": components["headers"]["RateLimitReset"];
+                    "X-Request-Id": components["headers"]["RequestId"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -2759,7 +2985,7 @@ export interface operations {
                 "X-Request-Id"?: components["parameters"]["RequestId"];
             };
             path: {
-                /** @description Spectrace project ID. */
+                /** @description SpecTrace project ID. */
                 project_id: string;
             };
             cookie?: never;
@@ -2769,6 +2995,10 @@ export interface operations {
             /** @description Comparisons. */
             200: {
                 headers: {
+                    "RateLimit-Limit": components["headers"]["RateLimitLimit"];
+                    "RateLimit-Remaining": components["headers"]["RateLimitRemaining"];
+                    "RateLimit-Reset": components["headers"]["RateLimitReset"];
+                    "X-Request-Id": components["headers"]["RequestId"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -2797,7 +3027,7 @@ export interface operations {
                 "X-Request-Id"?: components["parameters"]["RequestId"];
             };
             path: {
-                /** @description Spectrace project ID. */
+                /** @description SpecTrace project ID. */
                 project_id: string;
             };
             cookie?: never;
@@ -2818,15 +3048,23 @@ export interface operations {
             /** @description Existing comparison returned idempotently. */
             200: {
                 headers: {
+                    "RateLimit-Limit": components["headers"]["RateLimitLimit"];
+                    "RateLimit-Remaining": components["headers"]["RateLimitRemaining"];
+                    "RateLimit-Reset": components["headers"]["RateLimitReset"];
+                    "X-Request-Id": components["headers"]["RequestId"];
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["Comparison"];
                 };
             };
-            /** @description Comparison and job created. */
-            201: {
+            /** @description Comparison accepted and queued. */
+            202: {
                 headers: {
+                    "RateLimit-Limit": components["headers"]["RateLimitLimit"];
+                    "RateLimit-Remaining": components["headers"]["RateLimitRemaining"];
+                    "RateLimit-Reset": components["headers"]["RateLimitReset"];
+                    "X-Request-Id": components["headers"]["RequestId"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -2856,7 +3094,7 @@ export interface operations {
                 "X-Request-Id"?: components["parameters"]["RequestId"];
             };
             path: {
-                /** @description Spectrace project ID. */
+                /** @description SpecTrace project ID. */
                 project_id: string;
             };
             cookie?: never;
@@ -2866,6 +3104,10 @@ export interface operations {
             /** @description Project files. */
             200: {
                 headers: {
+                    "RateLimit-Limit": components["headers"]["RateLimitLimit"];
+                    "RateLimit-Remaining": components["headers"]["RateLimitRemaining"];
+                    "RateLimit-Reset": components["headers"]["RateLimitReset"];
+                    "X-Request-Id": components["headers"]["RequestId"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -2894,7 +3136,7 @@ export interface operations {
                 "X-Request-Id"?: components["parameters"]["RequestId"];
             };
             path: {
-                /** @description Spectrace project ID. */
+                /** @description SpecTrace project ID. */
                 project_id: string;
             };
             cookie?: never;
@@ -2917,6 +3159,10 @@ export interface operations {
             /** @description Quarantined upload authorization. */
             201: {
                 headers: {
+                    "RateLimit-Limit": components["headers"]["RateLimitLimit"];
+                    "RateLimit-Remaining": components["headers"]["RateLimitRemaining"];
+                    "RateLimit-Reset": components["headers"]["RateLimitReset"];
+                    "X-Request-Id": components["headers"]["RequestId"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -2950,6 +3196,10 @@ export interface operations {
             /** @description Server-owned usage balances, limits, remaining capacity, and reset timestamps. */
             200: {
                 headers: {
+                    "RateLimit-Limit": components["headers"]["RateLimitLimit"];
+                    "RateLimit-Remaining": components["headers"]["RateLimitRemaining"];
+                    "RateLimit-Reset": components["headers"]["RateLimitReset"];
+                    "X-Request-Id": components["headers"]["RequestId"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -2983,6 +3233,10 @@ export interface operations {
             /** @description Webhook endpoints. */
             200: {
                 headers: {
+                    "RateLimit-Limit": components["headers"]["RateLimitLimit"];
+                    "RateLimit-Remaining": components["headers"]["RateLimitRemaining"];
+                    "RateLimit-Reset": components["headers"]["RateLimitReset"];
+                    "X-Request-Id": components["headers"]["RequestId"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -3030,6 +3284,10 @@ export interface operations {
             /** @description Endpoint created; signing secret shown once. */
             201: {
                 headers: {
+                    "RateLimit-Limit": components["headers"]["RateLimitLimit"];
+                    "RateLimit-Remaining": components["headers"]["RateLimitRemaining"];
+                    "RateLimit-Reset": components["headers"]["RateLimitReset"];
+                    "X-Request-Id": components["headers"]["RequestId"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -3066,6 +3324,10 @@ export interface operations {
             /** @description Endpoint deleted. */
             204: {
                 headers: {
+                    "RateLimit-Limit": components["headers"]["RateLimitLimit"];
+                    "RateLimit-Remaining": components["headers"]["RateLimitRemaining"];
+                    "RateLimit-Reset": components["headers"]["RateLimitReset"];
+                    "X-Request-Id": components["headers"]["RequestId"];
                     [name: string]: unknown;
                 };
                 content?: never;
@@ -3100,10 +3362,14 @@ export interface operations {
                 /**
                  * @example {
                  *       "status": "active",
+                 *       "events": [
+                 *         "spectrace.comparison.completed"
+                 *       ],
                  *       "rotate_secret": false
                  *     }
                  */
                 "application/json": {
+                    events?: ("job.created" | "job.completed" | "job.failed" | "document.generated" | "document.delivered" | "document.delivery_failed" | "document.expired" | "approval.requested" | "approval.decided" | "docforge.generation.created" | "docforge.generation.completed" | "docforge.generation.failed" | "reconova.job.completed" | "reconova.job.failed" | "spectrace.file.ready" | "spectrace.file.failed" | "spectrace.comparison.completed" | "spectrace.comparison.failed")[];
                     rotate_secret?: boolean;
                     /** @enum {string} */
                     status?: "active" | "disabled";
@@ -3114,6 +3380,10 @@ export interface operations {
             /** @description Updated endpoint. A rotated secret is shown once and overlaps for 24 hours. */
             200: {
                 headers: {
+                    "RateLimit-Limit": components["headers"]["RateLimitLimit"];
+                    "RateLimit-Remaining": components["headers"]["RateLimitRemaining"];
+                    "RateLimit-Reset": components["headers"]["RateLimitReset"];
+                    "X-Request-Id": components["headers"]["RequestId"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -3150,6 +3420,10 @@ export interface operations {
             /** @description Redacted delivery attempts. */
             200: {
                 headers: {
+                    "RateLimit-Limit": components["headers"]["RateLimitLimit"];
+                    "RateLimit-Remaining": components["headers"]["RateLimitRemaining"];
+                    "RateLimit-Reset": components["headers"]["RateLimitReset"];
+                    "X-Request-Id": components["headers"]["RequestId"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -3186,6 +3460,10 @@ export interface operations {
             /** @description Replay queued. */
             202: {
                 headers: {
+                    "RateLimit-Limit": components["headers"]["RateLimitLimit"];
+                    "RateLimit-Remaining": components["headers"]["RateLimitRemaining"];
+                    "RateLimit-Reset": components["headers"]["RateLimitReset"];
+                    "X-Request-Id": components["headers"]["RequestId"];
                     [name: string]: unknown;
                 };
                 content: {
