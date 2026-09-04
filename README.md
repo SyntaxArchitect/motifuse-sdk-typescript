@@ -2,13 +2,13 @@
 
 Official TypeScript SDK for the Motifuse API.
 
-**DocForge · Reconova · Spectrace**
+**DocForge · Reconova · SpecTrace**
 
 [![CI](https://github.com/SyntaxArchitect/motifuse-sdk-typescript/actions/workflows/ci.yml/badge.svg)](https://github.com/SyntaxArchitect/motifuse-sdk-typescript/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178c6.svg)](https://www.typescriptlang.org/)
 
-> Release status: `1.0.0-beta.2` is published publicly on npm. The official GitHub release
+> Release status: npm `latest` was `1.0.0-beta.2` and `beta` was `1.0.0-beta.3` when verified on 2026-09-04. Local unreleased changes are listed in CHANGELOG.md. The official GitHub release
 > workflow is authorized as an npm Trusted Publisher and uses short-lived OIDC credentials for
 > subsequent releases.
 
@@ -42,62 +42,29 @@ public repositories, logs, or analytics. The SDK refuses construction in a brows
 
 ## Products
 
-### DocForge
+Start with a safe read for your entitled product: `docforge.templates.list({ limit: 1 })`,
+`reconova.files.list({ limit: 1 })`, or `spectrace.projects.list({ limit: 1 })`.
+An empty page is successful. Reconova and SpecTrace require live keys; DocForge test evaluation
+shares published template definitions while separating jobs, outputs and usage.
 
-```ts
-const generation = await motifuse.docforge.generations.create(
-  {
-    template_id: "tpl_example",
-    rows: [{ customer_name: "Example Industries" }],
-    output_format: "pdf",
-  },
-  { idempotencyKey: "invoice-batch-2026-08-24" },
-);
-
-const completed = await motifuse.jobs.wait(generation);
-const download = await motifuse.docforge.generations.download(completed.id);
-```
-
-### Reconova
-
-```ts
-const file = await motifuse.reconova.files.upload(
-  { filename: "quality.csv", size: bytes.byteLength, content_type: "text/csv" },
-  { body: bytes, idempotencyKey: "quality-upload-2026-08-24" },
-);
-
-const profile = file.job ? await motifuse.jobs.wait(file.job) : undefined;
-const cleaned = await motifuse.reconova.operations.clean({ source_asset_id: file.id });
-```
-
-### Spectrace
-
-```ts
-const project = await motifuse.spectrace.projects.create({
-  name: "Supplier contract review",
-});
-
-const comparison = await motifuse.spectrace.comparisons.create(project.id, {
-  baseline_version_id: "stv_baseline_example",
-  revised_version_id: "stv_revised_example",
-});
-
-if (comparison.job) await motifuse.jobs.wait(comparison.job);
-
-for await (const finding of motifuse.spectrace.findings.listAll({
-  comparisonId: comparison.id,
-  limit: 50,
-})) {
-  console.log(finding.id, finding.primary_change_type);
-}
-```
+[Complete runnable workflows](./examples/README.md) create their own upload IDs and poll actual
+returned jobs. DocForge requires your real published template and matching rows; it cannot publish
+templates through an invented endpoint. SpecTrace uploads both versions and waits for
+`available && comparison_eligible` before comparing. Reconova intake does not automatically clean data.
 
 ## Files
 
-Reconova and Spectrace use direct signed uploads. Their `files.upload` helpers perform the real
+Reconova and SpecTrace use direct signed uploads. Their `files.upload` helpers perform the real
 three-step flow: request authorization, upload bytes directly to the short-lived destination, and
-complete the file. Document bytes never pass through the SDK or Motifuse application server as an
-extra proxy hop. Pass a `Blob`, `Uint8Array`, `ArrayBuffer`, or compatible streaming `BodyInit`.
+complete the file. The SDK sends the bytes directly to signed storage; the Motifuse application server is not an
+extra upload proxy hop. Pass a `Blob`, `Uint8Array`, `ArrayBuffer`, or compatible streaming `BodyInit`.
+
+## Request logs
+
+The local candidate adds `motifuse.logs.list({ limit: 20 })` and `logs.listAll()` for the implemented
+`GET /logs` route. Requires `logs:read` plus a currently entitled product permission. Results remain
+workspace/environment/product filtered and contain metadata, not API payloads. This addition is
+not part of an already-published SDK release.
 
 ## Async jobs
 

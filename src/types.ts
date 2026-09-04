@@ -29,6 +29,8 @@ export type WebhookDelivery = Schemas["WebhookDelivery"];
 export type WebhookEvent = Schemas["WebhookEvent"];
 export type WebhookEventType = WebhookEvent["type"];
 export type Usage = Schemas["Usage"];
+export type ApiRequest = Schemas["ApiRequest"];
+export type ApiRequestList = Schemas["ApiRequestList"];
 export type UsageMetric = Schemas["UsageMetric"];
 
 export interface Page<T> {

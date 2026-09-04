@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased — local candidate
+
+- Propagate upload cancellation through authorization, storage and completion; stop pre-aborted calls before fetch.
+- Remove abort listeners when backoff timers settle; align SDK identity with package metadata.
+- Synchronize the v1 candidate contract, add typed SpecTrace readiness/document fields and a request-log client.
+- Add executable, offline-tested workflows and original CC0 fixtures. No package release or stable declaration is implied.
+
 All notable SDK changes are recorded here. The SDK follows Semantic Versioning; its package version
 is independent from the Motifuse `/api/v1` version.
 

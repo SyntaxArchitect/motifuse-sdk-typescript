@@ -1,3 +1,4 @@
+import { sleep } from "../core/sleep.js";
 import type { ApiClient, RequestOptions } from "../core/client.js";
 import { MotifuseJobError } from "../core/errors.js";
 import type { MotifuseJob, MotifuseProduct } from "../types.js";
@@ -11,23 +12,6 @@ export interface WaitForJobOptions extends RequestOptions {
   waitTimeout?: number | undefined;
   pollInterval?: number | undefined;
   maxPollInterval?: number | undefined;
-}
-
-function sleep(milliseconds: number, signal?: AbortSignal): Promise<void> {
-  return new Promise((resolve, reject) => {
-    const abortReason = () =>
-      signal?.reason instanceof Error ? signal.reason : new Error("Job polling was aborted.");
-    if (signal?.aborted) return reject(abortReason());
-    const timer = setTimeout(resolve, milliseconds);
-    signal?.addEventListener(
-      "abort",
-      () => {
-        clearTimeout(timer);
-        reject(abortReason());
-      },
-      { once: true },
-    );
-  });
 }
 
 export class JobsResource {

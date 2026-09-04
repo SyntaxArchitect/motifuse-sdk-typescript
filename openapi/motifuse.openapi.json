@@ -6004,6 +6004,27 @@
               "null"
             ]
           },
+          "document_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "SpecTrace document identity; use it to attach a revised version to the same document."
+          },
+          "available": {
+            "type": "boolean",
+            "description": "SpecTrace: bytes are ready and the server permits access after scanning; this alone does not establish comparison readiness."
+          },
+          "comparison_eligible": {
+            "type": "boolean",
+            "description": "SpecTrace: extraction produced usable comparison content. Require both available and comparison_eligible before comparing."
+          },
+          "malware_scan_status": {
+            "type": "string"
+          },
+          "extraction_status": {
+            "type": "string"
+          },
           "status": {
             "type": "string"
           },

@@ -1,0 +1,2 @@
+# PDF cross-reference offsets depend on byte-exact fixtures.
+/examples/fixtures/*.pdf binary

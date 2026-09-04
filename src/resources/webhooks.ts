@@ -66,10 +66,8 @@ export function verifyWebhook(input: VerifyWebhookInput): WebhookEvent {
     );
   try {
     return JSON.parse(body.toString("utf8")) as WebhookEvent;
-  } catch (cause) {
-    throw new MotifuseWebhookVerificationError(
-      `The verified webhook body is not valid JSON${cause instanceof Error ? `: ${cause.message}` : "."}`,
-    );
+  } catch {
+    throw new MotifuseWebhookVerificationError("The verified webhook body is not valid JSON.");
   }
 }
 

@@ -6,7 +6,7 @@ const document = JSON.parse(
   await readFile(new URL("../openapi/motifuse.openapi.json", import.meta.url), "utf8"),
 );
 
-test("the vendored OpenAPI contract is the unified production v1 surface", () => {
+test("the vendored OpenAPI contract is the unified v1 candidate surface", () => {
   assert.equal(document.openapi, "3.1.2");
   assert.equal(document.info.version, "1.0.0");
   assert.equal(document.servers[0].url, "https://motifuse.com/api/v1");
