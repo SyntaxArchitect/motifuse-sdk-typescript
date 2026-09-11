@@ -973,12 +973,20 @@ export interface components {
             next_cursor: string | null;
         };
         File: {
+            /** @description SpecTrace: bytes are ready and the server permits access after scanning; this alone does not establish comparison readiness. */
+            available?: boolean;
+            /** @description SpecTrace: extraction produced usable comparison content. Require both available and comparison_eligible before comparing. */
+            comparison_eligible?: boolean;
             /** Format: date-time */
             created_at?: string | null;
+            /** @description SpecTrace document identity; use it to attach a revised version to the same document. */
+            document_id?: string | null;
+            extraction_status?: string;
             filename?: string | null;
             format?: string | null;
             id: string;
             job?: components["schemas"]["Job"] | null;
+            malware_scan_status?: string;
             /** @constant */
             object: "file";
             /** @enum {string} */
