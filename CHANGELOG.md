@@ -3,6 +3,14 @@
 All notable SDK changes are recorded here. The SDK follows Semantic Versioning; its package version
 is independent from the Motifuse `/api/v1` version.
 
+## Unreleased
+
+### Fixed
+
+- Synchronized the OpenAPI snapshot and generated file types with production, adding SpecTrace
+  document identity, availability, comparison eligibility, malware scan status, and extraction
+  status fields.
+
 ## [1.0.0-beta.3] - 2026-08-27
 
 ### Fixed
